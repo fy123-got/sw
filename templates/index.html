@@ -393,12 +393,15 @@
                                         <label class="block text-xs font-medium mb-1" style="color: var(--text-muted);">数据源</label>
                                         <select id="bioDatabase" class="form-select">
                                             <option value="">选择数据源...</option>
-                                            <option value="kaggle_github">Kaggle 公开数据集（推荐演示）</option>
+                                            <option value="ngdc">国家基因组科学数据中心 (NGDC)</option>
+                                            <option value="ncmi">国家人口与健康科学数据共享平台 (NCMI)</option>
+                                            <option value="iprox">蛋白质组学数据平台 (iProX)</option>
                                             <option value="ncbi_geo">NCBI GEO（基因表达）</option>
                                             <option value="tcga_gdc">TCGA（癌症基因组）</option>
-                                            <option value="uci_ml">UCI 机器学习数据</option>
-                                            <option value="who_gho">WHO 公共卫生数据</option>
                                             <option value="ebi_arrayexpress">EBI ArrayExpress</option>
+                                            <option value="who_gho">WHO 公共卫生数据</option>
+                                            <option value="kaggle_github">Kaggle 公开数据集</option>
+                                            <option value="uci_ml">UCI 机器学习数据</option>
                                         </select>
                                     </div>
                                     <div>
@@ -1365,6 +1368,27 @@
                     { id: "jbrownlee/Datasets/master/pima-indians-diabetes.csv", name: "糖尿病预测数据集" },
                     { id: "selva86/datasets/master/Heart.csv", name: "心脏病数据集" },
                     { id: "uciml/breast-cancer-wisconsin-data/master/data.csv", name: "乳腺癌数据集" },
+                ]
+            },
+            "ngdc": {
+                examples: [
+                    { id: "CRA001160", name: "中国人群基因组变异数据" },
+                    { id: "CRA002345", name: "肿瘤基因组测序数据" },
+                    { id: "CRA004567", name: "药物基因组学数据" },
+                ]
+            },
+            "ncmi": {
+                examples: [
+                    { id: "NCMI20200001", name: "全国慢性病调查数据" },
+                    { id: "NCMI20210002", name: "心血管疾病队列数据" },
+                    { id: "NCMI20220003", name: "公共卫生监测数据" },
+                ]
+            },
+            "iprox": {
+                examples: [
+                    { id: "IPX0000001", name: "肝癌蛋白质组学数据" },
+                    { id: "IPX0000002", name: "乳腺癌蛋白质组学数据" },
+                    { id: "IPX0000003", name: "药物靶标蛋白质组数据" },
                 ]
             },
             "ncbi_geo": {
