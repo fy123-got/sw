@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  biomed-platform:
+    build: .
+    ports:
+      - "12245:12245"
+    volumes:
+      - ./data:/app/data
+      - ./charts:/app/charts
+      - ./logs:/app/logs
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=12245
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:12245/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

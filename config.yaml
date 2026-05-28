@@ -1,0 +1,66 @@
+# 生物医药数据智能分析平台 - 配置文件
+
+# AI配置
+ai:
+  base_url: "https://ark.cn-beijing.volces.com/api/v3"
+  model: "doubao-seed-2-0-pro-260215"
+  max_tokens: 2000
+  temperature: 0.7
+
+# 图表配置
+chart:
+  font:
+    chinese: "SimSun"
+    english: "Times New Roman"
+  style: "whitegrid"
+  palette: "deep"
+  dpi: 300
+  figure_size: [10, 6]
+  colors:
+    - "#4C72B0"
+    - "#DD8452"
+    - "#55A868"
+    - "#C44E52"
+    - "#8172B2"
+    - "#937860"
+    - "#DA8BC3"
+    - "#8C8C8C"
+
+# 报告配置
+report:
+  template: "report_template.docx"
+  font:
+    chinese: "SimSun"
+    english: "Times New Roman"
+  font_size: 12
+  logo: "logo.png"
+
+# 缓存配置
+cache:
+  ttl: 3600
+
+# 文件清理配置
+cleanup:
+  max_age_hours: 24
+
+# 服务器配置
+server:
+  host: "0.0.0.0"
+  port: 12245
+
+# 数据自动获取配置
+auto_fetch:
+  enabled: true
+  scheduler_timezone: "Asia/Shanghai"
+  sources: []
+  folder_watch_interval: 5
+
+# 分析配置
+analysis:
+  auto_select_methods: true
+  significance_level: 0.05
+
+# 问题建议配置
+issue_advisor:
+  enabled: true
+  use_llm_for_complex: true

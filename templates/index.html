@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <title>生物医药数据智能分析平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                primary: { 50: '#e8f0fe', 100: '#d0e0f7', 500: '#4A90D9', 600: '#357ABD', 700: '#2A5A8C' },
+            }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        /* === 生物医药蓝主题色 === */
+        :root {
+            --bg-main: #E8F0FE;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --primary: #4A90D9;
+            --primary-hover: #357ABD;
+            --primary-light: rgba(74, 144, 217, 0.12);
+            --text-title: #1A3A5C;
+            --text-body: #2C3E50;
+            --text-muted: #5A6B7D;
+            --border-color: #B8D4E8;
+            --shadow-card: 0 2px 16px rgba(26, 58, 92, 0.1);
+            --radius-card: 12px;
+            --radius-sm: 8px;
+        }
+
+        body {
+            background-image: url('/static/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            color: var(--text-body);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        }
+
+        /* 导航栏 */
+        .main-nav {
+            background-color: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            height: 60px;
+        }
+
+        .nav-tab {
+            padding: 0.5rem 1.2rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+            color: var(--text-muted);
+            border-radius: 0;
+            background: transparent;
+            cursor: pointer;
+        }
+        .nav-tab:hover {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background-color: var(--primary-light);
+        }
+        .nav-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        /* 主内容区 */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* 卡片样式 */
+        .glass-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-card);
+            padding: 1.5rem;
+        }
+
+        /* 卡片标题 */
+        .card-title {
+            color: var(--text-title);
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        .card-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 1.2rem;
+            background-color: var(--primary);
+            border-radius: 2px;
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        /* 主按钮 */
+        .btn-primary {
+            background-color: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 0.5rem 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 辅助按钮 */
+        .btn-outline {
+            background-color: transparent;
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+            border-radius: var(--radius-sm);
+            padding: 0.5rem 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-outline:hover {
+            background-color: var(--primary-light);
+            border-color: var(--primary-hover);
+        }
+
+        /* 输入框/选择框 */
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background-color: #fff;
+            color: var(--text-body);
+            font-size: 0.875rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            outline: none;
+        }
+        .form-input:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+        .form-input:hover, .form-select:hover {
+            border-color: var(--primary);
+        }
+
+        /* 标签页内容 */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* 统计结果区 */
+        .stats-results-area {
+            min-height: 350px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        /* 折叠面板样式 */
+        details.group {
+            margin-bottom: 0.125rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background-color: var(--bg-card);
+        }
+        details.group[open] {
+            margin-bottom: 0.5rem;
+        }
+        details.group summary {
+            padding: 0.35rem 0.75rem;
+            user-select: none;
+        }
+        details.group summary:hover {
+            background-color: var(--primary-light);
+            border-radius: var(--radius-sm);
+        }
+        details.group > div {
+            padding: 0.5rem 0.75rem;
+        }
+        /* 折叠状态下紧凑排列 */
+        details.group:not([open]) {
+            margin-bottom: 0.0625rem;
+        }
+
+        /* AI对话区 */
+        .chat-area {
+            height: 400px;
+            overflow-y: auto;
+        }
+
+        /* 进度条 */
+        .progress-bar { transition: width 0.3s ease; }
+
+        /* 聊天消息 */
+        .chat-message { max-width: 80%; }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* 加载动画 */
+        .loading-spinner {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 图表容器 */
+        .chart-container {
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            width: 100%;
+        }
+        .chart-container img { max-width: 100%; height: auto; }
+        .chart-container .js-plotly-plot {
+            width: 100% !important;
+        }
+
+        /* 深色模式 */
+        .dark body {
+            background-color: #0D1B2A;
+            background-image: url('/static/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            color: #e0e0e0;
+        }
+        .dark .main-nav {
+            background-color: rgba(13, 27, 42, 0.92);
+            border-bottom-color: #1B3A5C;
+        }
+        .dark .glass-card {
+            background-color: rgba(22, 42, 62, 0.85);
+            border-color: #1B3A5C;
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+        }
+        .dark .card-title { color: #7EB8E0; }
+        .dark .form-input, .dark .form-select {
+            background-color: #1B3A5C;
+            border-color: #2A5A8C;
+            color: #e0e0e0;
+        }
+        .dark .form-input:focus, .dark .form-select:focus {
+            border-color: #4A90D9;
+            box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.2);
+        }
+        .dark .chart-container {
+            background-color: #1B3A5C;
+            border-color: #2A5A8C;
+        }
+        .dark .nav-tab { color: #8899AA; }
+        .dark .nav-tab:hover { color: #4A90D9; border-bottom-color: #4A90D9; }
+        .dark .nav-tab.active { color: #4A90D9; border-bottom-color: #4A90D9; }
+
+        /* 聊天区域 */
+        .chat-area {
+            height: 400px;
+            overflow-y: auto;
+        }
+
+        /* 统计结果区域 */
+        .stats-results-area {
+            min-height: 350px;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        /* 表格样式 */
+        .border-collapse th {
+            background-color: var(--primary-light);
+            color: var(--text-title);
+            font-weight: 600;
+        }
+        .border-collapse td, .border-collapse th {
+            border-color: var(--border-color);
+        }
+        .border-collapse tr:hover {
+            background-color: rgba(82, 183, 136, 0.05);
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1000px) {
+            .main-content {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+                max-width: 100%;
+            }
+            .nav-tab {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.75rem;
+            }
+        }
+        @media (max-width: 768px) {
+            .main-content {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="transition-colors duration-300">
+    <div class="min-h-screen flex flex-col">
+        <!-- 统一导航栏 -->
+        <nav class="main-nav sticky top-0 z-50">
+            <div class="main-content h-full flex items-center justify-between" style="padding-top: 0; padding-bottom: 0;">
+                <!-- 左侧 Logo -->
+                <div class="flex items-center space-x-2 flex-shrink-0">
+                    <svg class="w-7 h-7" style="color: var(--primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.716-.293-2.3-2.379-1.067-3.61L5 14.5"/>
+                    </svg>
+                    <span class="text-lg font-bold" style="color: var(--primary);">BioMed Analytics</span>
+                </div>
+                <!-- 右侧 标签 -->
+                <div class="flex items-center space-x-1 overflow-x-auto flex-1 justify-end ml-4">
+                    <button class="nav-tab active" data-tab="auto-fetch">
+                        📥 数据自动获取
+                    </button>
+                    <button class="nav-tab" data-tab="manual-fetch">
+                        📤 数据手动获取
+                    </button>
+                    <button class="nav-tab" data-tab="report-charts">
+                        📊 报告与图表
+                    </button>
+                    <button class="nav-tab" data-tab="ai-advisor">
+                        💬 AI 顾问
+                    </button>
+                    <button id="darkModeToggle" class="ml-2 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition flex-shrink-0">
+                        <svg id="sunIcon" class="w-5 h-5 hidden dark:block" style="color: #fbbf24;" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <svg id="moonIcon" class="w-5 h-5 block dark:hidden" style="color: var(--text-muted);" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="flex-1 main-content">
+            <div class="space-y-6">
+                <!-- 📥 数据自动获取 -->
+                <div id="tab-auto-fetch" class="tab-content active">
+                    <section class="glass-card">
+                        <h2 class="card-title">数据自动获取</h2>
+                        <div class="space-y-4">
+                            <!-- 生物医学数据库选择 -->
+                            <div class="p-4 rounded-lg" style="background-color: var(--primary-light);">
+                                <h3 class="text-sm font-medium mb-3" style="color: var(--text-title);">🔬 生物医学数据库</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1" style="color: var(--text-muted);">数据源</label>
+                                        <select id="bioDatabase" class="form-select">
+                                            <option value="">选择数据源...</option>
+                                            <option value="kaggle_github">Kaggle 公开数据集（推荐演示）</option>
+                                            <option value="ncbi_geo">NCBI GEO（基因表达）</option>
+                                            <option value="tcga_gdc">TCGA（癌症基因组）</option>
+                                            <option value="uci_ml">UCI 机器学习数据</option>
+                                            <option value="who_gho">WHO 公共卫生数据</option>
+                                            <option value="ebi_arrayexpress">EBI ArrayExpress</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium mb-1" style="color: var(--text-muted);">数据集标识</label>
+                                        <div class="flex space-x-2">
+                                            <input type="text" id="bioIdentifier" placeholder="输入数据集ID或选择演示用例" class="form-input flex-1">
+                                            <button id="loadDemoBtn" class="btn-outline text-xs whitespace-nowrap">
+                                                加载演示用例
+                                            </button>
+                                        </div>
+                                        <div id="demoExamples" class="mt-1 text-xs hidden" style="color: var(--text-muted);"></div>
+                                    </div>
+                                    <button id="fetchBioDataBtn" class="btn-primary w-full">
+                                        获取数据并自动分析
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- � 数据手动获取 -->
+                <div id="tab-manual-fetch" class="tab-content">
+                    <section class="glass-card">
+                        <h2 class="card-title">数据手动获取</h2>
+                        
+                        <!-- 文件上传区域 -->
+                        <div class="space-y-4 mb-6">
+                            <!-- 拖拽上传 -->
+                            <div id="dropZone" class="p-8 rounded-lg text-center cursor-pointer transition-all" 
+                                 style="background-color: var(--primary-light); border: 2px dashed var(--border-color);">
+                                <svg class="w-12 h-12 mx-auto mb-3" style="color: var(--primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                </svg>
+                                <p class="text-sm font-medium" style="color: var(--text-title);">拖拽文件到此处上传</p>
+                                <p class="text-xs mt-1" style="color: var(--text-muted);">支持 CSV、Excel (.xlsx/.xls) 格式</p>
+                                <input type="file" id="fileInput" class="hidden" accept=".csv,.xlsx,.xls">
+                            </div>
+                            
+                            <!-- 选择本地文件 -->
+                            <div class="flex items-center space-x-3">
+                                <button id="selectFileBtn" class="btn-outline flex-1">
+                                    📁 选择本地文件
+                                </button>
+                            </div>
+                            
+                            <!-- 文件信息 -->
+                            <div id="fileInfo" class="hidden p-3 rounded-lg text-sm" style="background-color: rgba(82, 183, 136, 0.1);">
+                                <p class="font-medium" style="color: var(--text-title);">已选择文件：</p>
+                                <p id="fileName" style="color: var(--text-body);"></p>
+                                <p id="fileDetails" class="text-xs mt-1" style="color: var(--text-muted);"></p>
+                            </div>
+                        </div>
+
+                        <!-- 分析设置 -->
+                        <details class="mb-4 group" id="analysisSettings">
+                            <summary class="cursor-pointer text-sm font-medium hover:underline" style="color: var(--primary);">⚙️ 分析设置（点击展开）</summary>
+                            <div class="mt-4 space-y-4 p-4 rounded-lg" style="background-color: rgba(232, 243, 239, 0.5);">
+                                <!-- 分析模式切换 -->
+                                <div>
+                                    <label class="block text-sm font-medium mb-2" style="color: var(--text-title);">分析模式</label>
+                                    <div class="flex space-x-4">
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="analysisMode" value="auto" checked class="mr-2 accent-[#4A90D9]">
+                                            <span class="text-sm" style="color: var(--text-body);">智能选择（默认）</span>
+                                        </label>
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="analysisMode" value="manual" class="mr-2 accent-[#4A90D9]">
+                                            <span class="text-sm" style="color: var(--text-body);">手动选择</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- 手动选择配置 -->
+                                <div id="manualConfig" class="hidden space-y-4">
+                                    <div class="border-t pt-4" style="border-color: var(--border-color);">
+                                        <h3 class="text-sm font-medium mb-3" style="color: var(--text-title);">分析方法选择</h3>
+                                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                            <label class="inline-flex items-center">
+                                                <input type="checkbox" id="chkDescriptive" checked class="mr-2 accent-[#4A90D9]">
+                                                <span class="text-sm" style="color: var(--text-body);">描述性统计</span>
+                                            </label>
+                                            <label class="inline-flex items-center">
+                                                <input type="checkbox" id="chkNormality" checked class="mr-2 accent-[#4A90D9]">
+                                                <span class="text-sm" style="color: var(--text-body);">正态性检验</span>
+                                            </label>
+                                            <label class="inline-flex items-center">
+                                                <input type="checkbox" id="chkTTest" class="mr-2 accent-[#4A90D9]">
+                                                <span class="text-sm" style="color: var(--text-body);">T检验</span>
+                                            </label>
+                                            <label class="inline-flex items-center">
+                                                <input type="checkbox" id="chkANOVA" class="mr-2 accent-[#4A90D9]">
+                                                <span class="text-sm" style="color: var(--text-body);">方差分析</span>
+                                            </label>
+                                            <label class="inline-flex items-center">
+                                                <input type="checkbox" id="chkCorrelation" checked class="mr-2 accent-[#4A90D9]">
+                                                <span class="text-sm" style="color: var(--text-body);">相关性分析</span>
+                                            </label>
+                                            <label class="inline-flex items-center">
+                                                <input type="checkbox" id="chkRegression" class="mr-2 accent-[#4A90D9]">
+                                                <span class="text-sm" style="color: var(--text-body);">回归分析</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="border-t pt-4" style="border-color: var(--border-color);">
+                                            <h3 class="text-sm font-medium mb-3" style="color: var(--text-title);">回归方法</h3>
+                                            <select id="regressionMethod" class="form-select">
+                                                <option value="ols">OLS（普通最小二乘）</option>
+                                                <option value="ridge">Ridge（岭回归）</option>
+                                                <option value="lasso">Lasso（LASSO回归）</option>
+                                                <option value="elasticnet">ElasticNet（弹性网）</option>
+                                                <option value="robust">Robust（稳健回归）</option>
+                                                <option value="quantile">Quantile（分位数回归）</option>
+                                                <option value="dummy">Dummy（虚拟变量回归）</option>
+                                                <option value="hlm">HLM（层次线性模型）</option>
+                                                <option value="bayesian">Bayesian（贝叶斯回归）</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="border-t pt-4" style="border-color: var(--border-color);">
+                                            <h3 class="text-sm font-medium mb-3" style="color: var(--text-title);">多重比较校正方法</h3>
+                                            <select id="correctionMethod" class="form-select">
+                                                <option value="bonferroni">Bonferroni</option>
+                                                <option value="fdr">FDR（错误发现率）</option>
+                                                <option value="tukey">Tukey HSD</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="border-t pt-4" style="border-color: var(--border-color);">
+                                            <h3 class="text-sm font-medium mb-3" style="color: var(--text-title);">缺失值处理策略</h3>
+                                            <select id="missingStrategy" class="form-select">
+                                                <option value="median">中位数填充（默认）</option>
+                                                <option value="mean">均值填充</option>
+                                                <option value="drop">删除含缺失值行</option>
+                                                <option value="knn">KNN插补</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="border-t pt-4" style="border-color: var(--border-color);">
+                                            <h3 class="text-sm font-medium mb-3" style="color: var(--text-title);">异常值处理策略</h3>
+                                            <select id="outlierStrategy" class="form-select">
+                                                <option value="detect_only">仅检测，不处理（默认）</option>
+                                                <option value="remove">剔除异常值行</option>
+                                                <option value="winsorize">缩尾处理（1.5×IQR）</option>
+                                                <option value="mark_na">标记为缺失值</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <div id="progressContainer" class="hidden">
+                            <div class="w-full rounded-full h-2.5" style="background-color: var(--border-color);">
+                                <div id="progressBar" class="progress-bar h-2.5 rounded-full" style="width: 0%; background-color: var(--primary);"></div>
+                            </div>
+                            <p id="progressText" class="text-sm mt-1" style="color: var(--text-muted);">分析中...</p>
+                        </div>
+                        <button id="analyzeBtn" class="mt-4 btn-primary w-full" disabled>
+                            开始分析
+                        </button>
+                    </section>
+                </div>
+
+                    <!-- 📄 报告与图表 -->
+                    <div id="tab-report-charts" class="tab-content">
+                        <section id="resultsSection" class="glass-card hidden">
+                            <h2 class="card-title">分析结果</h2>
+                            
+                            <!-- 数据清洗详情 -->
+                            <details class="mb-4 group" id="cleaningDetails">
+                                <summary class="cursor-pointer text-sm font-medium hover:underline" style="color: var(--primary);">📋 数据清洗详情（点击展开）</summary>
+                                <div class="mt-4 space-y-4">
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                        <div class="p-3 rounded" style="background-color: rgba(59, 130, 246, 0.1);">
+                                            <p style="color: var(--text-muted);">原始行数</p>
+                                            <p class="text-lg font-bold" style="color: var(--text-title);" id="cleanOrigRows">-</p>
+                                        </div>
+                                        <div class="p-3 rounded" style="background-color: rgba(82, 183, 136, 0.15);">
+                                            <p style="color: var(--text-muted);">清洗后行数</p>
+                                            <p class="text-lg font-bold" style="color: var(--text-title);" id="cleanFinalRows">-</p>
+                                        </div>
+                                        <div class="p-3 rounded" style="background-color: rgba(245, 158, 11, 0.1);">
+                                            <p style="color: var(--text-muted);">删除重复行</p>
+                                            <p class="text-lg font-bold" style="color: var(--text-title);" id="cleanDupRows">-</p>
+                                        </div>
+                                        <div class="p-3 rounded" style="background-color: rgba(139, 92, 246, 0.1);">
+                                            <p style="color: var(--text-muted);">检测异常值</p>
+                                            <p class="text-lg font-bold" style="color: var(--text-title);" id="cleanOutliers">-</p>
+                                        </div>
+                                    </div>
+                                    <div id="cleaningSteps" class="space-y-2"></div>
+                                    <div id="outlierDetails" class="hidden">
+                                        <h3 class="text-sm font-medium mb-2" style="color: var(--text-title);">异常值详情</h3>
+                                        <div class="max-h-60 overflow-y-auto space-y-1 text-sm" id="outlierList"></div>
+                                    </div>
+                                    <button id="exportCleaningLogBtn" class="btn-outline text-sm">
+                                        导出清洗日志
+                                    </button>
+                                </div>
+                            </details>
+
+                            <!-- 自动选择的方法说明 -->
+                            <div id="methodsUsed" class="mb-4 p-3 rounded-lg text-sm hidden" style="background-color: var(--primary-light);">
+                                <p class="font-medium" style="color: var(--text-title);">平台已根据您的数据特征自动选择了以下分析方法：</p>
+                                <ul class="list-disc pl-4 mt-2 space-y-1" id="methodsList"></ul>
+                            </div>
+
+                            <!-- 问题发现与建议 -->
+                            <div id="issuesSection" class="mb-4 hidden">
+                                <h3 class="text-lg font-semibold mb-3 flex items-center" style="color: var(--text-title);">
+                                    <span class="mr-2">📊</span> 问题发现与建议
+                                </h3>
+                                <div class="space-y-3" id="issuesList"></div>
+                            </div>
+
+                            <div id="statsResults" class="space-y-4 stats-results-area"></div>
+                            <div id="chartsContainer" class="mt-6 space-y-6"></div>
+                            <div id="interactiveChartsContainer" class="mt-6 space-y-6"></div>
+                        </section>
+
+                        <section class="glass-card">
+                            <h2 class="card-title">报告导出</h2>
+                            <div class="flex space-x-3">
+                                <button id="reportWordBtn" class="btn-primary" disabled>
+                                    导出 Word 报告
+                                </button>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- 💬 AI 顾问 -->
+                    <div id="tab-ai-advisor" class="tab-content">
+                        <section class="glass-card">
+                            <h2 class="card-title">AI 对话助手</h2>
+                            <div id="chatHistory" class="chat-area space-y-3 mb-4 p-3 rounded-lg" style="background-color: rgba(232, 243, 239, 0.4);">
+                                <div class="chat-message rounded-lg p-3 text-sm" style="background-color: var(--primary-light);">
+                                    <p class="font-medium" style="color: var(--primary);">AI助手</p>
+                                    <p class="mt-1" style="color: var(--text-body);">您好！我是生物统计学AI助手。完成数据分析后，您可以向我询问关于统计结果的问题，或让我生成实验结论。</p>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <input type="text" id="chatInput" placeholder="输入您的问题..." class="form-input flex-1" disabled>
+                                <button id="chatSendBtn" class="btn-primary" disabled>
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                </button>
+                            </div>
+                        </section>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <section class="glass-card">
+                                <h2 class="card-title">异常数据侦探</h2>
+                                <div class="text-sm" style="color: var(--text-muted);">
+                                    <p>分析数据后将自动检测异常值</p>
+                                </div>
+                                <button id="anomalyDetectBtn" class="btn-outline w-full mt-4" disabled>
+                                    开始检测
+                                </button>
+                            </section>
+
+                            <section class="glass-card">
+                                <h2 class="card-title">生成方法学段落</h2>
+                                <div class="text-sm" style="color: var(--text-muted);">
+                                    <p>自动生成实验方法学描述</p>
+                                </div>
+                                <button id="methodsBtn" class="btn-outline w-full mt-4" disabled>
+                                    📝 生成
+                                </button>
+                            </section>
+                        </div>
+
+                        <section class="glass-card">
+                            <h2 class="card-title">字段信息</h2>
+                            <div id="columnInfo" class="text-sm" style="color: var(--text-muted);">
+                                <p>获取数据后将显示字段信息</p>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="glass-card border-t py-4 mt-8" style="border-color: var(--border-color);">
+            <div class="main-content text-center text-sm" style="color: var(--text-muted);">
+                生物医药数据智能分析平台 v2.0.0 | 快捷键: Ctrl+A 分析 | Ctrl+R 下载报告
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let sessionId = null;
+        let analysisResults = null;
+        let cleaningLog = null;
+
+        const triggerUrlFetchBtn = document.getElementById('triggerUrlFetchBtn');
+        const startWatchBtn = document.getElementById('startWatchBtn');
+        const stopWatchBtn = document.getElementById('stopWatchBtn');
+        const watchStatus = document.getElementById('watchStatus');
+        const exportCleaningLogBtn = document.getElementById('exportCleaningLogBtn');
+        const bioDatabase = document.getElementById('bioDatabase');
+        const bioIdentifier = document.getElementById('bioIdentifier');
+        const fetchBioDataBtn = document.getElementById('fetchBioDataBtn');
+        const loadDemoBtn_ = document.getElementById('loadDemoBtn');
+        const demoExamples = document.getElementById('demoExamples');
+        const reportWordBtn = document.getElementById('reportWordBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const resultsSection = document.getElementById('resultsSection');
+        const chatInput = document.getElementById('chatInput');
+        const chatSendBtn = document.getElementById('chatSendBtn');
+        const chatHistory = document.getElementById('chatHistory');
+
+        // 导航栏标签切换
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', async () => {
+                const targetTab = tab.dataset.tab;
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('tab-' + targetTab).classList.add('active');
+                
+                // 切换到报告与图表时，检查是否有新的分析结果
+                if (targetTab === 'report-charts') {
+                    await checkForNewAnalysisResults();
+                }
+            });
+        });
+
+        // 检查是否有新的分析结果（用于文件监听模式）
+        async function checkForNewAnalysisResults() {
+            try {
+                const response = await fetch('/api/latest-analysis', { credentials: 'same-origin' });
+                const data = await response.json();
+                
+                if (data && !data.error && data.descriptive) {
+                    // 检查是否是新结果（通过文件名判断）
+                    const newFilename = data.filename;
+                    const currentFilename = analysisResults?.filename;
+                    
+                    if (newFilename && newFilename !== currentFilename) {
+                        console.log('发现新的分析结果:', newFilename);
+                        analysisResults = data;
+                        cleaningLog = data.cleaning_log;
+                        displayResults(data);
+                        enableReportButtons();
+                        enableChat();
+                    }
+                }
+            } catch (err) {
+                console.log('检查新分析结果失败:', err);
+            }
+        }
+
+        // 页面加载时自动获取分析结果
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('/api/results', { credentials: 'same-origin' });
+                const data = await response.json();
+                if (data.results) {
+                    analysisResults = data.results;
+                    cleaningLog = data.results.cleaning_log;
+                    displayResults(data.results);
+                    enableReportButtons();
+                    enableChat();
+                }
+            } catch (err) {
+                console.log('No existing results to load');
+            }
+        });
+
+        async function handleDataLoaded(data) {
+            sessionId = data.session_id;
+            updateColumnInfo(data);
+        }
+
+        function updateColumnInfo(data) {
+            const colInfo = document.getElementById('columnInfo');
+            let html = `<p class="mb-2"><strong>数值列:</strong></p><ul class="list-disc pl-4 mb-3">`;
+            data.column_types.numeric.forEach(c => html += `<li>${c}</li>`);
+            html += `</ul><p class="mb-2"><strong>分类列:</strong></p><ul class="list-disc pl-4">`;
+            data.column_types.categorical.forEach(c => html += `<li>${c}</li>`);
+            html += `</ul>`;
+            colInfo.innerHTML = html;
+        }
+
+        function formatAnalysisResult(key, value) {
+            let html = '<div class="glass-card p-3 rounded text-sm">';
+            
+            // Normality tests (支持 normality 和 normality_tests)
+            if (key === 'normality_tests' || key === 'normality') {
+                html += '<table class="min-w-full border-collapse"><thead><tr>';
+                html += '<th class="border p-2">变量</th><th class="border p-2">检验</th><th class="border p-2">统计量</th><th class="border p-2">P值</th><th class="border p-2">是否正态</th><th class="border p-2">建议</th>';
+                html += '</tr></thead><tbody>';
+                for (const [col, result] of Object.entries(value)) {
+                    const isNormal = result.is_normal ? '是' : '否';
+                    const normalClass = result.is_normal ? 'text-green-600' : 'text-red-600';
+                    html += `<tr><td class="border p-2 font-medium">${col}</td>`;
+                    html += `<td class="border p-2">${result.test || 'Shapiro-Wilk'}</td>`;
+                    html += `<td class="border p-2">${result.statistic?.toFixed(4) || '-'}</td>`;
+                    html += `<td class="border p-2">${result.p_value !== undefined ? (result.p_value < 0.001 ? '<0.001' : result.p_value.toFixed(4)) : '-'}</td>`;
+                    html += `<td class="border p-2 ${normalClass}">${isNormal}</td>`;
+                    html += `<td class="border p-2">${result.suggestion || '-'}</td></tr>`;
+                }
+                html += '</tbody></table>';
+            }
+            // T-tests (支持 t_tests 和 t_test)
+            else if (key === 't_tests' || key === 't_test') {
+                html += '<table class="min-w-full border-collapse"><thead><tr>';
+                html += '<th class="border p-2">比较</th><th class="border p-2">统计量</th><th class="border p-2">P值</th><th class="border p-2">显著</th><th class="border p-2">效应量(Cohen\'s d)</th>';
+                html += '</tr></thead><tbody>';
+                for (const [name, result] of Object.entries(value)) {
+                    const sig = result.significant ? '是*' : '否';
+                    const sigClass = result.significant ? 'text-red-600 font-bold' : '';
+                    html += `<tr><td class="border p-2 font-medium">${name}</td>`;
+                    html += `<td class="border p-2">${result.statistic?.toFixed(4) || '-'}</td>`;
+                    html += `<td class="border p-2">${result.p_value !== undefined ? (result.p_value < 0.001 ? '<0.001' : result.p_value.toFixed(4)) : '-'}</td>`;
+                    html += `<td class="border p-2 ${sigClass}">${sig}</td>`;
+                    html += `<td class="border p-2">${result.effect_size?.cohens_d?.toFixed(4) || '-'}</td></tr>`;
+                }
+                html += '</tbody></table>';
+                html += '<p class="text-xs mt-1" style="color: var(--text-muted);">* P < 0.05 表示差异显著</p>';
+            }
+            // ANOVA (支持 anova_tests 和 anova)
+            else if (key === 'anova_tests' || key === 'anova') {
+                html += '<table class="min-w-full border-collapse"><thead><tr>';
+                html += '<th class="border p-2">比较</th><th class="border p-2">F值</th><th class="border p-2">P值</th><th class="border p-2">显著</th><th class="border p-2">效应量(η²)</th><th class="border p-2">组数</th>';
+                html += '</tr></thead><tbody>';
+                for (const [name, result] of Object.entries(value)) {
+                    const sig = result.significant ? '是*' : '否';
+                    const sigClass = result.significant ? 'text-red-600 font-bold' : '';
+                    html += `<tr><td class="border p-2 font-medium">${name}</td>`;
+                    html += `<td class="border p-2">${result.statistic?.toFixed(4) || '-'}</td>`;
+                    html += `<td class="border p-2">${result.p_value !== undefined ? (result.p_value < 0.001 ? '<0.001' : result.p_value.toFixed(4)) : '-'}</td>`;
+                    html += `<td class="border p-2 ${sigClass}">${sig}</td>`;
+                    html += `<td class="border p-2">${result.effect_size?.eta_squared?.toFixed(4) || '-'}</td>`;
+                    html += `<td class="border p-2">${result.n_groups || '-'}</td></tr>`;
+                }
+                html += '</tbody></table>';
+                html += '<p class="text-xs mt-1" style="color: var(--text-muted);">* P < 0.05 表示至少有一组与其他组存在显著差异</p>';
+            }
+            // Correlation (支持 correlation_analysis 和 correlation)
+            else if (key === 'correlation_analysis' || key === 'correlation') {
+                if (value.correlation_matrix && value.columns) {
+                    const cols = value.columns;
+                    const corrMatrix = value.correlation_matrix;
+                    html += '<table class="min-w-full border-collapse"><thead><tr>';
+                    html += '<th class="border p-2">变量</th>';
+                    cols.forEach(c => html += `<th class="border p-2">${c}</th>`);
+                    html += '</tr></thead><tbody>';
+                    cols.forEach((col, i) => {
+                        html += `<tr><td class="border p-2 font-medium">${col}</td>`;
+                        cols.forEach((_, j) => {
+                            const r = corrMatrix[i][j];
+                            const rStr = r !== null && r !== undefined ? r.toFixed(3) : '-';
+                            const color = r > 0.5 ? 'text-red-600' : r < -0.5 ? 'text-blue-600' : '';
+                            html += `<td class="border p-2 ${color}">${rStr}</td>`;
+                        });
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table>';
+                }
+                if (value.significant_pairs && value.significant_pairs.length > 0) {
+                    html += '<p class="font-medium mt-2">显著相关对:</p><ul class="list-disc pl-4">';
+                    value.significant_pairs.forEach(p => {
+                        if (p.significant) {
+                            html += `<li>${p.var1} ↔ ${p.var2}: r=${p.correlation.toFixed(3)}, P=${p.p_value < 0.001 ? '<0.001' : p.p_value.toFixed(4)}</li>`;
+                        }
+                    });
+                    html += '</ul>';
+                }
+            }
+            // Regression (支持 regression_analysis 和 regression)
+            else if (key === 'regression_analysis' || key === 'regression') {
+                // Model name
+                html += `<p class="font-medium mb-2">${value.model || '回归分析'}</p>`;
+                
+                // Common metrics table
+                html += '<table class="min-w-full border-collapse"><thead><tr>';
+                html += '<th class="border p-2">指标</th><th class="border p-2">值</th>';
+                html += '</tr></thead><tbody>';
+                
+                if (value.r_squared !== undefined) html += `<tr><td class="border p-2">R²</td><td class="border p-2">${value.r_squared.toFixed(4)}</td></tr>`;
+                if (value.adjusted_r_squared !== undefined) html += `<tr><td class="border p-2">调整后R²</td><td class="border p-2">${value.adjusted_r_squared.toFixed(4)}</td></tr>`;
+                if (value.f_statistic !== undefined) html += `<tr><td class="border p-2">F统计量</td><td class="border p-2">${value.f_statistic.toFixed(4)}</td></tr>`;
+                if (value.f_p_value !== undefined) html += `<tr><td class="border p-2">F检验P值</td><td class="border p-2">${value.f_p_value.toFixed(6)}</td></tr>`;
+                if (value.rmse !== undefined) html += `<tr><td class="border p-2">RMSE</td><td class="border p-2">${value.rmse.toFixed(4)}</td></tr>`;
+                if (value.accuracy !== undefined) html += `<tr><td class="border p-2">准确率</td><td class="border p-2">${(value.accuracy * 100).toFixed(2)}%</td></tr>`;
+                if (value.alpha !== undefined) html += `<tr><td class="border p-2">正则化参数α</td><td class="border p-2">${value.alpha}</td></tr>`;
+                if (value.l1_ratio !== undefined) html += `<tr><td class="border p-2">L1比例</td><td class="border p-2">${value.l1_ratio}</td></tr>`;
+                if (value.degree !== undefined) html += `<tr><td class="border p-2">多项式次数</td><td class="border p-2">${value.degree}</td></tr>`;
+                if (value.n_features_selected !== undefined) html += `<tr><td class="border p-2">选中特征数</td><td class="border p-2">${value.n_features_selected}</td></tr>`;
+                if (value.selected_features !== undefined) html += `<tr><td class="border p-2">选中特征</td><td class="border p-2">${value.selected_features.join(', ')}</td></tr>`;
+                if (value.n_positive !== undefined) html += `<tr><td class="border p-2">正类样本</td><td class="border p-2">${value.n_positive}</td></tr>`;
+                if (value.n_negative !== undefined) html += `<tr><td class="border p-2">负类样本</td><td class="border p-2">${value.n_negative}</td></tr>`;
+                html += `<tr><td class="border p-2">样本量</td><td class="border p-2">${value.n_samples || '-'}</td></tr>`;
+                html += '</tbody></table>';
+                
+                // Coefficients
+                if (value.coefficients) {
+                    html += '<p class="font-medium mt-2">回归系数:</p>';
+                    html += '<table class="min-w-full border-collapse"><thead><tr>';
+                    html += '<th class="border p-2">变量</th><th class="border p-2">系数</th>';
+                    if (value.p_values) html += '<th class="border p-2">P值</th>';
+                    html += '</tr></thead><tbody>';
+                    for (const [name, coef] of Object.entries(value.coefficients)) {
+                        html += `<tr><td class="border p-2 font-medium">${name}</td><td class="border p-2">${typeof coef === 'number' ? coef.toFixed(4) : coef}</td>`;
+                        if (value.p_values && value.p_values[name] !== undefined) {
+                            const pVal = value.p_values[name];
+                            const pClass = pVal < 0.05 ? 'text-red-600 font-bold' : '';
+                            html += `<td class="border p-2 ${pClass}">${pVal.toFixed(6)}</td>`;
+                        }
+                        html += '</tr>';
+                    }
+                    html += '</tbody></table>';
+                }
+                
+                // Odds ratio for logistic regression
+                if (value.odds_ratio) {
+                    html += '<p class="font-medium mt-2">优势比(OR值):</p>';
+                    html += '<table class="min-w-full border-collapse"><thead><tr>';
+                    html += '<th class="border p-2">变量</th><th class="border p-2">OR值</th>';
+                    html += '</tr></thead><tbody>';
+                    for (const [name, or_val] of Object.entries(value.odds_ratio)) {
+                        const orClass = or_val > 1 ? 'text-red-600' : or_val < 1 ? 'text-blue-600' : '';
+                        html += `<tr><td class="border p-2 font-medium">${name}</td><td class="border p-2 ${orClass}">${or_val.toFixed(4)}</td></tr>`;
+                    }
+                    html += '</tbody></table>';
+                }
+            }
+            // Default: show as formatted JSON
+            else {
+                html += `<pre class="text-xs overflow-x-auto">${JSON.stringify(value, null, 2)}</pre>`;
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function displayResults(data) {
+            resultsSection.classList.remove('hidden');
+            
+            // 更新清洗详情
+            if (data.cleaning_log) {
+                cleaningLog = data.cleaning_log;
+                const log = data.cleaning_log;
+                
+                document.getElementById('cleanOrigRows').textContent = log.original_rows || '-';
+                document.getElementById('cleanFinalRows').textContent = log.final_rows || '-';
+                document.getElementById('cleanDupRows').textContent = log.duplicates_removed || '0';
+                document.getElementById('cleanOutliers').textContent = log.total_outliers || '0';
+                
+                // 清洗步骤
+                const stepsDiv = document.getElementById('cleaningSteps');
+                if (log.steps && log.steps.length > 0) {
+                    // 中文步骤名称映射
+                    const stepNameMap = {
+                        'remove_empty_columns': '删除空列',
+                        'remove_empty_rows': '删除空行',
+                        'remove_duplicates': '删除重复行',
+                        'fill_missing': '填充缺失值',
+                        'fill_missing_categorical': '填充分类缺失值',
+                        'missing_summary': '缺失值汇总',
+                        'convert_types': '数据类型转换',
+                        'outlier_detection': '异常值检测',
+                        'empty_check': '空数据检查',
+                    };
+                    
+                    stepsDiv.innerHTML = '<h3 class="text-sm font-medium mb-2">清洗步骤</h3>' +
+                        log.steps.map((step, i) => {
+                            const stepKey = step.step || '';
+                            const stepName = stepNameMap[stepKey] || stepKey || '数据清洗';
+                            
+                            // 生成详细的中文描述
+                            let detail = '';
+                            if (stepKey === 'remove_empty_columns') {
+                                detail = `删除了 ${step.count || step.removed?.length || 0} 个空列`;
+                            } else if (stepKey === 'remove_empty_rows') {
+                                detail = `删除了 ${step.removed_count || 0} 个空行`;
+                            } else if (stepKey === 'remove_duplicates') {
+                                detail = `删除了 ${step.removed_count || 0} 个重复行`;
+                            } else if (stepKey === 'fill_missing') {
+                                detail = `列「${step.column || ''}」使用${step.strategy || '均值'}填充了 ${step.filled_count || 0} 个缺失值`;
+                            } else if (stepKey === 'fill_missing_categorical') {
+                                detail = `列「${step.column || ''}」使用众数填充了 ${step.filled_count || 0} 个缺失值`;
+                            } else if (stepKey === 'outlier_detection') {
+                                detail = `检测方法: ${step.method || '3σ原则+箱线图法'}，发现 ${step.total_outliers || 0} 个异常值（${step.outlier_percentage || '0%'}）`;
+                            } else if (stepKey === 'convert_types') {
+                                detail = `转换了 ${step.count || 0} 个列的数据类型`;
+                            } else if (stepKey === 'missing_summary') {
+                                detail = `清洗前 ${step.before || 0} 个缺失值 → 清洗后 ${step.after || 0} 个`;
+                            } else if (stepKey === 'empty_check') {
+                                detail = step.message || '数据检查完成';
+                            } else {
+                                // 默认显示所有字段
+                                const details = Object.entries(step)
+                                    .filter(([k]) => k !== 'step')
+                                    .map(([k, v]) => `${k}: ${v}`)
+                                    .join('，');
+                                detail = details || '完成';
+                            }
+                            
+                            return `<div class="p-2 rounded text-xs" style="background-color: var(--bg-card);">
+                                <p class="font-medium" style="color: var(--text-title);">步骤 ${i + 1}: ${stepName}</p>
+                                <p style="color: var(--text-muted);">${detail}</p>
+                            </div>`;
+                        }).join('');
+                }
+                
+                // 异常值详情
+                if (log.outlier_details && log.outlier_details.length > 0) {
+                    document.getElementById('outlierDetails').classList.remove('hidden');
+                    const outlierList = document.getElementById('outlierList');
+                    outlierList.innerHTML = log.outlier_details.slice(0, 20).map(o => 
+                        `<div class="p-2 rounded">
+                            <p style="color: var(--text-body);">列: ${o.column} | 行: ${o.row_index} | 值: ${o.value}</p>
+                            <p style="color: var(--text-muted);">检测方法: ${o.method} | 阈值: ${o.threshold}</p>
+                        </div>`
+                    ).join('');
+                    if (log.outlier_details.length > 20) {
+                        outlierList.innerHTML += `<p class="text-xs mt-2" style="color: var(--text-muted);">... 还有 ${log.outlier_details.length - 20} 个异常值</p>`;
+                    }
+                }
+            }
+            
+            // 显示自动选择的方法
+            if (data.methods_used && data.methods_used.length > 0) {
+                const methodsDiv = document.getElementById('methodsUsed');
+                const methodsList = document.getElementById('methodsList');
+                methodsDiv.classList.remove('hidden');
+                
+                // 支持新旧两种格式
+                methodsList.innerHTML = data.methods_used.map((m, i) => {
+                    if (typeof m === 'string') {
+                        // 旧格式：纯字符串
+                        return `<li class="mb-2">
+                            <div class="flex items-start">
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold mr-2 mt-0.5 flex-shrink-0" style="background-color: var(--primary-light); color: var(--primary);">${i + 1}</span>
+                                <span>${m}</span>
+                            </div>
+                        </li>`;
+                    } else {
+                        // 新格式：包含name和reason
+                        return `<li class="mb-3 p-3 glass-card rounded-lg border" style="border-color: var(--border-color);">
+                            <div class="flex items-start">
+                                <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold mr-3 mt-0.5 flex-shrink-0" style="background-color: var(--primary);">${i + 1}</span>
+                                <div class="flex-1">
+                                    <p class="font-medium" style="color: var(--text-title);">${m.name}</p>
+                                    <p class="text-xs mt-1" style="color: var(--text-muted);">${m.reason}</p>
+                                </div>
+                            </div>
+                        </li>`;
+                    }
+                }).join('');
+            }
+            
+            // 显示问题发现与建议
+            if (data.issues && data.issues.length > 0) {
+                const issuesDiv = document.getElementById('issuesSection');
+                const issuesList = document.getElementById('issuesList');
+                issuesDiv.classList.remove('hidden');
+                
+                const severityColors = {
+                    '高': 'border-l-4 rounded',
+                    '中等': 'border-l-4 rounded',
+                    '低': 'border-l-4 rounded'
+                };
+                const severityBorderColors = {
+                    '高': '#e74c3c',
+                    '中等': '#f39c12',
+                    '低': '#27ae60'
+                };
+                const severityBgColors = {
+                    '高': 'rgba(231, 76, 60, 0.05)',
+                    '中等': 'rgba(243, 156, 18, 0.05)',
+                    '低': 'rgba(39, 174, 96, 0.05)'
+                };
+                const severityIcons = {
+                    '高': '🔴',
+                    '中等': '🟡',
+                    '低': '🟢'
+                };
+                
+                issuesList.innerHTML = data.issues.map(issue => 
+                    `<div class="p-4 ${severityColors[issue.severity] || severityColors['低']}" style="border-left-color: ${severityBorderColors[issue.severity] || severityBorderColors['低']}; background-color: ${severityBgColors[issue.severity] || severityBgColors['低']};">
+                        <div class="flex items-center mb-2">
+                            <span class="mr-2">${severityIcons[issue.severity] || '⚪'}</span>
+                            <span class="font-medium">[${issue.severity}] ${issue.category}</span>
+                        </div>
+                        <p class="text-sm mb-1"><span class="font-medium">问题:</span> ${issue.problem}</p>
+                        <p class="text-sm mb-1"><span class="font-medium">建议:</span> ${issue.suggestion}</p>
+                        ${issue.details ? `<p class="text-xs" style="color: var(--text-muted);"><span class="font-medium">详情:</span> ${issue.details}</p>` : ''}
+                    </div>`
+                ).join('');
+            }
+            
+            const statsDiv = document.getElementById('statsResults');
+            let statsHtml = '';
+            
+            // Handle both formats: descriptive_statistics (manual) and descriptive (auto)
+            const descriptive = data.descriptive_statistics || data.descriptive;
+            if (descriptive && !descriptive.error) {
+                statsHtml += '<details class="group" open><summary class="cursor-pointer text-sm font-medium hover:underline" style="color: var(--primary);">📊 描述性统计（点击折叠）</summary>';
+                statsHtml += '<div class="mt-3 overflow-x-auto"><table class="min-w-full text-sm border-collapse"><thead><tr>';
+                statsHtml += '<th class="border p-2">变量</th><th class="border p-2">均值</th><th class="border p-2">标准差</th><th class="border p-2">中位数</th><th class="border p-2">Q1</th><th class="border p-2">Q3</th><th class="border p-2">偏度</th><th class="border p-2">缺失</th></tr></thead><tbody>';
+                for (const [col, s] of Object.entries(descriptive)) {
+                    if (typeof s === 'object' && s.mean !== undefined) {
+                        statsHtml += `<tr><td class="border p-2 font-medium">${col}</td><td class="border p-2">${s.mean?.toFixed(3) || '-'}</td><td class="border p-2">${s.std?.toFixed(3) || '-'}</td><td class="border p-2">${s.median?.toFixed(3) || '-'}</td><td class="border p-2">${s.q1?.toFixed(3) || '-'}</td><td class="border p-2">${s.q3?.toFixed(3) || '-'}</td><td class="border p-2">${s.skewness?.toFixed(3) || '-'}</td><td class="border p-2">${s.missing || 0}</td></tr>`;
+                    }
+                }
+                statsHtml += '</tbody></table></div></details>';
+            }
+            
+            // Map auto analysis keys to display titles
+            const titleMap = {
+                'normality': '正态性检验',
+                'normality_tests': '正态性检验',
+                't_test': 'T检验',
+                't_tests': 'T检验',
+                'anova': '方差分析',
+                'anova_tests': '方差分析',
+                'correlation': '相关性分析',
+                'correlation_analysis': '相关性分析',
+                'regression': '回归分析',
+                'regression_analysis': '回归分析',
+            };
+            
+            const skipKeys = ['cleaning_log', 'descriptive_statistics', 'descriptive', 'charts', 'interactive_charts', 'issues', 'methods_used', 'data_characteristics', 'analysis_log', 'methods_used'];
+            
+            for (const [key, value] of Object.entries(data)) {
+                if (skipKeys.includes(key)) continue;
+                if (typeof value === 'object' && value !== null && !value.error) {
+                    const title = titleMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    statsHtml += `<details class="group" open><summary class="cursor-pointer text-sm font-medium hover:underline" style="color: var(--primary);">📋 ${title}（点击折叠）</summary><div class="mt-3">`;
+                    statsHtml += formatAnalysisResult(key, value);
+                    statsHtml += '</div></details>';
+                }
+            }
+            statsDiv.innerHTML = statsHtml;
+            
+            // 所有折叠面板切换逻辑
+            statsDiv.querySelectorAll('details').forEach(details => {
+                details.addEventListener('toggle', () => {
+                    const summary = details.querySelector('summary');
+                    if (details.open) {
+                        summary.textContent = summary.textContent.replace('点击展开', '点击折叠');
+                    } else {
+                        summary.textContent = summary.textContent.replace('点击折叠', '点击展开');
+                    }
+                });
+            });
+            
+            const chartsDiv = document.getElementById('chartsContainer');
+            let chartsHtml = '';
+            if (data.charts) {
+                chartsHtml += '<details class="group" open><summary class="cursor-pointer text-sm font-medium hover:underline" style="color: var(--primary);"> 图表（点击折叠）</summary><div class="mt-3 space-y-6">';
+                for (const [name, path] of Object.entries(data.charts)) {
+                    if (typeof path === 'string' && path) {
+                        chartsHtml += `<div class="chart-container"><h3 class="font-medium mb-2">${name.replace(/_/g, ' ').toUpperCase()}</h3><img src="/charts/${path}" alt="${name}" class="rounded shadow"></div>`;
+                    }
+                }
+                chartsHtml += '</div></details>';
+            }
+            chartsDiv.innerHTML = chartsHtml;
+            
+            // 图表折叠面板切换逻辑
+            const chartDetails = chartsDiv.querySelector('details');
+            if (chartDetails) {
+                chartDetails.addEventListener('toggle', () => {
+                    const summary = chartDetails.querySelector('summary');
+                    if (chartDetails.open) {
+                        summary.textContent = summary.textContent.replace('点击展开', '点击折叠');
+                    } else {
+                        summary.textContent = summary.textContent.replace('点击折叠', '点击展开');
+                    }
+                });
+            }
+            const interactiveDiv = document.getElementById('interactiveChartsContainer');
+            let interactiveHtml = '';
+            if (data.interactive_charts) {
+                interactiveHtml += '<details class="group" open><summary class="cursor-pointer text-sm font-medium hover:underline" style="color: var(--primary);"> 交互式图表（点击折叠）</summary><div class="mt-3 space-y-6">';
+                for (const [name, jsonStr] of Object.entries(data.interactive_charts)) {
+                    const chartId = `interactive_${name}`;
+                    interactiveHtml += `<div id="${chartId}" class="w-full h-96"></div>`;
+                    setTimeout(() => {
+                        try {
+                            const fig = JSON.parse(jsonStr);
+                            Plotly.newPlot(chartId, fig.data, fig.layout, {responsive: true});
+                        } catch(e) { console.error(`Failed to render ${name}:`, e); }
+                    }, 100);
+                }
+                interactiveHtml += '</div></details>';
+            }
+            interactiveDiv.innerHTML = interactiveHtml;
+            
+            // 交互式图表折叠面板切换逻辑
+            const interactiveDetails = interactiveDiv.querySelector('details');
+            if (interactiveDetails) {
+                interactiveDetails.addEventListener('toggle', () => {
+                    const summary = interactiveDetails.querySelector('summary');
+                    if (interactiveDetails.open) {
+                        summary.textContent = summary.textContent.replace('点击展开', '点击折叠');
+                    } else {
+                        summary.textContent = summary.textContent.replace('点击折叠', '点击展开');
+                    }
+                });
+            }
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function enableReportButtons() { reportWordBtn.disabled = false; }
+        function enableChat() { chatInput.disabled = false; chatSendBtn.disabled = false; document.getElementById('anomalyDetectBtn').disabled = false; document.getElementById('methodsBtn').disabled = false; }
+
+        reportWordBtn.addEventListener('click', () => { window.open('/api/report', '_blank'); });
+
+        chatSendBtn.addEventListener('click', sendChatMessage);
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+
+        async function sendChatMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+            chatInput.value = '';
+            appendChatMessage('user', message);
+            try {
+                const response = await fetch('/api/conversation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, stats_summary: analysisResults }),
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+                if (!response.ok) { alert(data.detail || '对话失败'); return; }
+                appendChatMessage('ai', data.response);
+            } catch (err) { appendChatMessage('ai', '对话请求失败: ' + err.message); }
+        }
+
+        function appendChatMessage(role, content) {
+            const div = document.createElement('div');
+            div.className = `chat-message rounded-lg p-3 text-sm glass-card ${role === 'user' ? 'ml-auto' : ''}`;
+            div.innerHTML = `<p class="font-medium">${role === 'user' ? '您' : 'AI助手'}</p><p class="mt-1 whitespace-pre-wrap">${content}</p>`;
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        document.getElementById('anomalyDetectBtn').addEventListener('click', async () => {
+            if (!cleaningLog) { alert('请先完成数据分析'); return; }
+            appendChatMessage('user', '请分析数据清洗过程中发现的异常');
+            try {
+                const response = await fetch('/api/detect-anomalies', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cleaning_log: cleaningLog }),
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+                if (!response.ok) { alert(data.detail || '异常检测失败'); return; }
+                appendChatMessage('ai', data.analysis);
+            } catch (err) { appendChatMessage('ai', '异常检测失败: ' + err.message); }
+        });
+
+        document.getElementById('methodsBtn').addEventListener('click', async () => {
+            if (!analysisResults) { alert('请先完成数据分析'); return; }
+            appendChatMessage('user', '请生成方法学段落');
+            try {
+                const response = await fetch('/api/methods-paragraph', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ analysis_context: analysisResults }),
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+                if (!response.ok) { alert(data.detail || '方法学段落生成失败'); return; }
+                appendChatMessage('ai', data.methods_paragraph);
+            } catch (err) { appendChatMessage('ai', '方法学段落生成失败: ' + err.message); }
+        });
+
+        document.getElementById('darkModeToggle').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+        });
+        if (localStorage.getItem('darkMode') === 'true') document.documentElement.classList.add('dark');
+
+        // 文件上传功能
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const selectFileBtn = document.getElementById('selectFileBtn');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileDetails = document.getElementById('fileDetails');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        let uploadedFile = null;
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        selectFileBtn.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--primary)';
+            dropZone.style.backgroundColor = 'rgba(82, 183, 136, 0.2)';
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = 'var(--border-color)';
+            dropZone.style.backgroundColor = 'var(--primary-light)';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--border-color)';
+            dropZone.style.backgroundColor = 'var(--primary-light)';
+            if (e.dataTransfer.files.length > 0) {
+                handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        async function handleFileUpload(file) {
+            const validTypes = ['.csv', '.xlsx', '.xls'];
+            const ext = '.' + file.name.split('.').pop().toLowerCase();
+            if (!validTypes.includes(ext)) {
+                alert('请上传 CSV 或 Excel 文件');
+                return;
+            }
+
+            uploadedFile = file;
+            fileName.textContent = file.name;
+            fileDetails.textContent = `文件大小: ${(file.size / 1024).toFixed(2)} KB`;
+            fileInfo.classList.remove('hidden');
+            analyzeBtn.disabled = false;
+
+            // 上传文件到服务器
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    alert(data.detail || '上传失败');
+                    return;
+                }
+                sessionId = data.session_id;
+                updateColumnInfo(data);
+            } catch (err) {
+                alert('上传失败: ' + err.message);
+            }
+        }
+
+        // 数据自动获取功能
+        const demoDataMap = {
+            "kaggle_github": {
+                examples: [
+                    { id: "jbrownlee/Datasets/master/pima-indians-diabetes.csv", name: "糖尿病预测数据集" },
+                    { id: "selva86/datasets/master/Heart.csv", name: "心脏病数据集" },
+                    { id: "uciml/breast-cancer-wisconsin-data/master/data.csv", name: "乳腺癌数据集" },
+                ]
+            },
+            "ncbi_geo": {
+                examples: [
+                    { id: "GSE42872", name: "糖尿病基因表达数据" },
+                    { id: "GSE10072", name: "肺癌基因表达数据" },
+                    { id: "GSE53454", name: "药物响应数据" },
+                ]
+            },
+            "tcga_gdc": {
+                examples: [
+                    { id: "TCGA-BRCA", name: "乳腺癌临床数据" },
+                    { id: "TCGA-LUAD", name: "肺癌临床数据" },
+                    { id: "TCGA-COAD", name: "结肠癌临床数据" },
+                ]
+            },
+            "uci_ml": {
+                examples: [
+                    { id: "wine-quality/winequality-red.csv", name: "葡萄酒质量数据" },
+                    { id: "parkinsons/parkinsons.data", name: "帕金森病数据" },
+                    { id: "liver-disorders/bupa.data", name: "肝病数据" },
+                ]
+            },
+            "who_gho": {
+                examples: [
+                    { id: "WHOSIS_000001", name: "全球疾病统计" },
+                    { id: "WHOSIS_000002", name: "疫苗接种率" },
+                ]
+            },
+            "ebi_arrayexpress": {
+                examples: [
+                    { id: "E-MTAB-2345", name: "药物毒性数据" },
+                    { id: "E-GEOD-12345", name: "疾病模型数据" },
+                ]
+            },
+        };
+
+        bioDatabase.addEventListener('change', () => {
+            const source = bioDatabase.value;
+            if (source && demoDataMap[source]) {
+                const examples = demoDataMap[source].examples;
+                demoExamples.innerHTML = '<p class="mb-1">演示用例（点击选择）:</p>' +
+                    examples.map(ex => 
+                        `<span class="inline-block mr-2 mb-1 px-2 py-1 rounded cursor-pointer hover:bg-primary-100" 
+                              style="background-color: var(--bg-card);"
+                              onclick="selectDemo('${ex.id}', '${ex.name}')">${ex.name}</span>`
+                    ).join('');
+                demoExamples.classList.remove('hidden');
+            } else {
+                demoExamples.classList.add('hidden');
+            }
+        });
+
+        window.selectDemo = function(id, name) {
+            bioIdentifier.value = id;
+            alert(`已选择: ${name}`);
+        };
+
+        loadDemoBtn_.addEventListener('click', () => {
+            const source = bioDatabase.value;
+            if (!source) {
+                alert('请先选择数据源');
+                return;
+            }
+            if (demoDataMap[source]) {
+                const firstExample = demoDataMap[source].examples[0];
+                bioIdentifier.value = firstExample.id;
+                alert(`已加载演示用例: ${firstExample.name}`);
+            }
+        });
+
+        fetchBioDataBtn.addEventListener('click', async () => {
+            const source = bioDatabase.value;
+            const identifier = bioIdentifier.value.trim();
+            
+            if (!source) {
+                alert('请选择数据源');
+                return;
+            }
+            if (!identifier) {
+                alert('请输入数据集标识或选择演示用例');
+                return;
+            }
+
+            fetchBioDataBtn.disabled = true;
+            fetchBioDataBtn.textContent = '获取中...';
+            
+            try {
+                const response = await fetch('/api/bio-database/fetch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ source, identifier }),
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+                if (!response.ok) { alert(data.detail || '数据获取失败'); return; }
+                
+                // 显示进度提示
+                fetchBioDataBtn.textContent = '分析中，请稍候...';
+                
+                // 轮询等待分析完成
+                let attempts = 0;
+                const maxAttempts = 30; // 最多等待 30 次（约 60 秒）
+                
+                const pollResults = setInterval(async () => {
+                    attempts++;
+                    try {
+                        const res = await fetch('/api/results', { credentials: 'same-origin' });
+                        const result = await res.json();
+                        
+                        if (result.results) {
+                            clearInterval(pollResults);
+                            analysisResults = result.results;
+                            cleaningLog = result.results.cleaning_log;
+                            displayResults(result.results);
+                            enableReportButtons();
+                            enableChat();
+                            fetchBioDataBtn.disabled = false;
+                            fetchBioDataBtn.textContent = '获取数据并自动分析';
+                            alert(`分析完成！\n${data.message}`);
+                        } else if (attempts >= maxAttempts) {
+                            clearInterval(pollResults);
+                            fetchBioDataBtn.disabled = false;
+                            fetchBioDataBtn.textContent = '获取数据并自动分析';
+                            alert('分析超时，请手动点击"开始分析"按钮');
+                        }
+                    } catch (err) {
+                        console.log('Polling error:', err);
+                    }
+                }, 2000); // 每 2 秒轮询一次
+                
+            } catch (err) {
+                alert('数据获取失败: ' + err.message);
+                fetchBioDataBtn.disabled = false;
+                fetchBioDataBtn.textContent = '获取数据并自动分析';
+            }
+        });
+
+        // 导出清洗日志
+        exportCleaningLogBtn.addEventListener('click', () => {
+            if (!cleaningLog) {
+                alert('暂无清洗日志');
+                return;
+            }
+            
+            const logText = JSON.stringify(cleaningLog, null, 2);
+            const blob = new Blob([logText], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'cleaning_log.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'a' && !e.shiftKey && !document.activeElement.matches('input, textarea')) { 
+                e.preventDefault(); 
+                document.getElementById('analyzeBtn').click(); 
+            }
+            if (e.ctrlKey && e.key === 'r' && !e.shiftKey && !document.activeElement.matches('input, textarea')) { e.preventDefault(); if (!reportWordBtn.disabled) reportWordBtn.click(); }
+        });
+
+        // 分析设置面板逻辑
+        const analysisSettings = document.getElementById('analysisSettings');
+        const analysisModeRadios = document.querySelectorAll('input[name="analysisMode"]');
+        const manualConfigDiv = document.getElementById('manualConfig');
+        
+        analysisSettings.addEventListener('toggle', () => {
+            const summary = analysisSettings.querySelector('summary');
+            if (analysisSettings.open) {
+                summary.textContent = summary.textContent.replace('点击展开', '点击折叠');
+            } else {
+                summary.textContent = summary.textContent.replace('点击折叠', '点击展开');
+            }
+        });
+        
+        // 数据清洗详情面板逻辑
+        const cleaningDetails = document.getElementById('cleaningDetails');
+        cleaningDetails.addEventListener('toggle', () => {
+            const summary = cleaningDetails.querySelector('summary');
+            if (cleaningDetails.open) {
+                summary.textContent = summary.textContent.replace('点击展开', '点击折叠');
+            } else {
+                summary.textContent = summary.textContent.replace('点击折叠', '点击展开');
+            }
+        });
+        
+        analysisModeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (radio.value === 'manual') {
+                    manualConfigDiv.classList.remove('hidden');
+                } else {
+                    manualConfigDiv.classList.add('hidden');
+                }
+            });
+        });
+
+        // 分析按钮逻辑
+        document.getElementById('analyzeBtn').addEventListener('click', async () => {
+            progressContainer.classList.remove('hidden');
+            progressBar.style.width = '10%';
+            progressText.textContent = '正在分析...';
+            
+            const analysisMode = document.querySelector('input[name="analysisMode"]:checked').value;
+            
+            let requestBody = {};
+            if (analysisMode === 'manual') {
+                requestBody = {
+                    analysis_mode: 'manual',
+                    analysis_config: {
+                        descriptive: document.getElementById('chkDescriptive').checked,
+                        normality: document.getElementById('chkNormality').checked,
+                        ttest: document.getElementById('chkTTest').checked,
+                        anova: document.getElementById('chkANOVA').checked,
+                        correlation: document.getElementById('chkCorrelation').checked,
+                        regression: document.getElementById('chkRegression').checked,
+                        regression_method: document.getElementById('regressionMethod').value,
+                        correction_method: document.getElementById('correctionMethod').value,
+                        missing_strategy: document.getElementById('missingStrategy').value,
+                        outlier_strategy: document.getElementById('outlierStrategy').value,
+                    }
+                };
+            } else {
+                requestBody = {
+                    analysis_mode: 'auto'
+                };
+            }
+            
+            try {
+                progressBar.style.width = '30%';
+                progressText.textContent = '正在执行分析...';
+                
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody),
+                    credentials: 'same-origin'
+                });
+                
+                progressBar.style.width = '80%';
+                progressText.textContent = '正在生成图表...';
+                
+                const data = await response.json();
+                if (!response.ok) { 
+                    alert(data.detail || '分析失败'); 
+                    progressContainer.classList.add('hidden');
+                    return; 
+                }
+                
+                progressBar.style.width = '100%';
+                progressText.textContent = '分析完成！';
+                
+                analysisResults = data;
+                cleaningLog = data.cleaning_log;
+                displayResults(data);
+                enableReportButtons();
+                enableChat();
+                
+                setTimeout(() => {
+                    progressContainer.classList.add('hidden');
+                    progressBar.style.width = '0%';
+                }, 2000);
+            } catch (err) {
+                alert('分析请求失败: ' + err.message);
+                progressContainer.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

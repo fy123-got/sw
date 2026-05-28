@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project data
+data/*
+!data/.gitkeep
+charts/*
+!charts/.gitkeep
+logs/*
+!logs/.gitkeep
+*.log
+
+# Reports
+*.docx
+*.pdf
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Trae
+.trae/
