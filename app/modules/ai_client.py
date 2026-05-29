@@ -13,7 +13,7 @@ ai_config = config.get("ai", {})
 
 class AIClient:
     def __init__(self):
-        api_key = os.getenv("ARK_API_KEY", "")
+        api_key = os.getenv("ZHIPU_API_KEY", "") or os.getenv("ARK_API_KEY", "")
         base_url = os.getenv("OPENAI_BASE_URL", "") or ai_config.get("base_url", "https://open.bigmodel.cn/api/paas/v4")
         self.model = ai_config.get("model", "glm-4-flash")
         self.max_tokens = ai_config.get("max_tokens", 2000)

@@ -15,27 +15,6 @@ class BioDatabaseAdapter:
         os.makedirs(save_dir, exist_ok=True)
         
         self.sources = {
-            "ngdc": {
-                "name": "国家基因组科学数据中心 (NGDC)",
-                "description": "获取基因组、变异、序列等元数据",
-                "base_url": "https://ngdc.cncb.ac.cn/",
-                "auth_required": False,
-                "demo_ids": ["CRA001160", "CRA002345", "CRA004567"],
-            },
-            "ncmi": {
-                "name": "国家人口与健康科学数据共享平台 (NCMI)",
-                "description": "获取人口健康、临床、公卫数据集信息",
-                "base_url": "https://www.ncmi.cn/",
-                "auth_required": False,
-                "demo_ids": ["NCMI20200001", "NCMI20210002", "NCMI20220003"],
-            },
-            "iprox": {
-                "name": "蛋白质组学数据平台 (iProX)",
-                "description": "获取蛋白质组学数据集信息",
-                "base_url": "https://www.iprox.org/",
-                "auth_required": False,
-                "demo_ids": ["IPX0000001", "IPX0000002", "IPX0000003"],
-            },
             "ncbi_geo": {
                 "name": "NCBI GEO",
                 "description": "基因表达综合数据库",
@@ -209,89 +188,6 @@ class BioDatabaseAdapter:
             logger.warning(f"TCGA GDC fetch failed, using demo data: {e}")
             return self._generate_tcga_demo_data(project_id)
     
-    async def _fetch_ngdc(self, accession_id: str) -> pd.DataFrame:
-        """从国家基因组科学数据中心 (NGDC) 获取基因组、变异、序列等元数据"""
-        try:
-            url = f"https://ngdc.cncb.ac.cn/gsa/api/search"
-            params = {"accession": accession_id, "format": "json"}
-            response = requests.get(url, params=params, timeout=30)
-            response.raise_for_status()
-            data = response.json()
-            
-            if "results" in data and data["results"]:
-                result = data["results"][0]
-                return pd.DataFrame([{
-                    "accession": result.get("accession"),
-                    "title": result.get("title"),
-                    "organism": result.get("organism"),
-                    "sample_count": result.get("sample_count"),
-                    "data_type": result.get("data_type"),
-                    "platform": result.get("platform"),
-                    "submission_date": result.get("submission_date"),
-                    "description": result.get("description"),
-                }])
-            
-            return self._generate_ngdc_demo_data(accession_id)
-            
-        except Exception as e:
-            logger.warning(f"NGDC fetch failed, using demo data: {e}")
-            return self._generate_ngdc_demo_data(accession_id)
-    
-    async def _fetch_ncmi(self, dataset_id: str) -> pd.DataFrame:
-        """从国家人口与健康科学数据共享平台 (NCMI) 获取人口健康、临床、公卫数据"""
-        try:
-            url = f"https://www.ncmi.cn/api/dataset/{dataset_id}"
-            response = requests.get(url, timeout=30)
-            response.raise_for_status()
-            data = response.json()
-            
-            if "data" in data:
-                ds = data["data"]
-                return pd.DataFrame([{
-                    "dataset_id": ds.get("id"),
-                    "title": ds.get("title"),
-                    "category": ds.get("category"),
-                    "population": ds.get("population"),
-                    "sample_size": ds.get("sample_size"),
-                    "region": ds.get("region"),
-                    "year": ds.get("year"),
-                    "description": ds.get("description"),
-                }])
-            
-            return self._generate_ncmi_demo_data(dataset_id)
-            
-        except Exception as e:
-            logger.warning(f"NCMI fetch failed, using demo data: {e}")
-            return self._generate_ncmi_demo_data(dataset_id)
-    
-    async def _fetch_iprox(self, project_id: str) -> pd.DataFrame:
-        """从蛋白质组学数据平台 (iProX) 获取蛋白质组学数据集"""
-        try:
-            url = f"https://www.iprox.org/api/project/{project_id}"
-            response = requests.get(url, timeout=30)
-            response.raise_for_status()
-            data = response.json()
-            
-            if "project" in data:
-                proj = data["project"]
-                return pd.DataFrame([{
-                    "project_id": proj.get("id"),
-                    "title": proj.get("title"),
-                    "organism": proj.get("organism"),
-                    "instrument": proj.get("instrument"),
-                    "sample_count": proj.get("sample_count"),
-                    "protein_count": proj.get("protein_count"),
-                    "peptide_count": proj.get("peptide_count"),
-                    "submission_date": proj.get("submission_date"),
-                    "description": proj.get("description"),
-                }])
-            
-            return self._generate_iprox_demo_data(project_id)
-            
-        except Exception as e:
-            logger.warning(f"iProX fetch failed, using demo data: {e}")
-            return self._generate_iprox_demo_data(project_id)
-    
     async def _fetch_ebi_arrayexpress(self, exp_id: str) -> pd.DataFrame:
         """从 EBI ArrayExpress 获取数据"""
         try:
@@ -363,8 +259,8 @@ class BioDatabaseAdapter:
             return df
             
         except Exception as e:
-            logger.warning(f"Kaggle GitHub fetch failed, using demo data: {e}")
-            return self._generate_demo_dataframe("kaggle", path)
+            logger.error(f"Kaggle GitHub fetch failed: {e}")
+            raise
     
     async def _fetch_uci_ml(self, path: str) -> pd.DataFrame:
         """从 UCI 机器学习仓库获取数据"""
@@ -381,8 +277,8 @@ class BioDatabaseAdapter:
             return df
             
         except Exception as e:
-            logger.warning(f"UCI ML fetch failed, using demo data: {e}")
-            return self._generate_demo_dataframe("uci", path)
+            logger.error(f"UCI ML fetch failed: {e}")
+            raise
     
     def _generate_geo_demo_data(self, gse_id: str) -> pd.DataFrame:
         """生成 GEO 演示数据"""
@@ -446,69 +342,6 @@ class BioDatabaseAdapter:
                 })
         
         return pd.DataFrame(records)
-    
-    def _generate_ngdc_demo_data(self, accession_id: str) -> pd.DataFrame:
-        """生成国家基因库 GSA 演示数据"""
-        np.random.seed(42)
-        n_samples = 50
-        
-        data = {
-            "sample_id": [f"{accession_id}-S{i:04d}" for i in range(1, n_samples + 1)],
-            "gene_name": np.random.choice(["BRCA1", "TP53", "EGFR", "KRAS", "PIK3CA", "BRAF", "PTEN", "RB1"], n_samples),
-            "expression_level": np.random.normal(10, 3, n_samples),
-            "mutation_type": np.random.choice(["SNV", "InDel", "CNV", "Fusion", "None"], n_samples, p=[0.3, 0.2, 0.15, 0.05, 0.3]),
-            "chromosome": np.random.choice([f"chr{i}" for i in range(1, 23)] + ["chrX", "chrY"], n_samples),
-            "position": np.random.randint(1000000, 250000000, n_samples),
-            "ref_allele": np.random.choice(["A", "T", "C", "G"], n_samples),
-            "alt_allele": np.random.choice(["A", "T", "C", "G"], n_samples),
-            "read_depth": np.random.poisson(50, n_samples),
-            "quality_score": np.random.uniform(20, 60, n_samples),
-            "accession_id": accession_id,
-        }
-        
-        return pd.DataFrame(data)
-    
-    def _generate_ncmi_demo_data(self, dataset_id: str) -> pd.DataFrame:
-        """生成国家人口与健康科学数据共享平台 (NCMI) 演示数据"""
-        np.random.seed(42)
-        n_records = 80
-        
-        data = {
-            "record_id": [f"{dataset_id}-R{i:04d}" for i in range(1, n_records + 1)],
-            "age": np.random.randint(18, 85, n_records),
-            "gender": np.random.choice(["male", "female"], n_records),
-            "region": np.random.choice(["华北", "华东", "华南", "华中", "西南", "西北", "东北"], n_records),
-            "bmi": np.random.normal(24, 4, n_records),
-            "blood_pressure_systolic": np.random.normal(120, 15, n_records),
-            "blood_pressure_diastolic": np.random.normal(80, 10, n_records),
-            "blood_glucose": np.random.normal(5.5, 1.5, n_records),
-            "cholesterol": np.random.normal(5.0, 1.0, n_records),
-            "smoking": np.random.choice(["never", "former", "current"], n_records, p=[0.6, 0.2, 0.2]),
-            "dataset_id": dataset_id,
-        }
-        
-        return pd.DataFrame(data)
-    
-    def _generate_iprox_demo_data(self, project_id: str) -> pd.DataFrame:
-        """生成蛋白质组学数据平台 (iProX) 演示数据"""
-        np.random.seed(42)
-        n_proteins = 60
-        
-        data = {
-            "protein_id": [f"{project_id}-P{i:04d}" for i in range(1, n_proteins + 1)],
-            "protein_name": np.random.choice(["ALB", "HBA1", "HBB", "TF", "APOA1", "IGHG1", "C3", "F2", "IGKC", "APOB"], n_proteins),
-            "gene_symbol": np.random.choice(["ALB", "HBA1", "HBB", "TF", "APOA1", "IGHG1", "C3", "F2", "IGKC", "APOB"], n_proteins),
-            "peptide_count": np.random.randint(2, 20, n_proteins),
-            "spectral_count": np.random.randint(5, 100, n_proteins),
-            "intensity": np.random.lognormal(10, 2, n_proteins),
-            "fold_change": np.random.lognormal(0, 0.5, n_proteins),
-            "p_value": np.random.uniform(0.001, 0.1, n_proteins),
-            "q_value": np.random.uniform(0.01, 0.2, n_proteins),
-            "subcellular_location": np.random.choice(["cytoplasm", "nucleus", "membrane", "mitochondria", "ER"], n_proteins),
-            "project_id": project_id,
-        }
-        
-        return pd.DataFrame(data)
     
     def _generate_demo_dataframe(self, source: str, identifier: str) -> pd.DataFrame:
         """生成通用演示数据"""

@@ -169,10 +169,9 @@ def clean_data(
             logger.info(f"Removed {removed_dups} duplicate rows")
 
     missing_before = df.isnull().sum().sum()
-    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    object_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
-
     if missing_before > 0:
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        object_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
 
         if missing_strategy == "drop":
             initial_rows = len(df)
