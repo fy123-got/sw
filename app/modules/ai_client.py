@@ -13,25 +13,25 @@ ai_config = config.get("ai", {})
 
 class AIClient:
     def __init__(self):
-        api_key = os.getenv("ZHIPU_API_KEY", "")
+        api_key = os.getenv("ARK_API_KEY", "")
         base_url = os.getenv("OPENAI_BASE_URL", "") or ai_config.get("base_url", "https://open.bigmodel.cn/api/paas/v4")
         self.model = ai_config.get("model", "glm-4-flash")
         self.max_tokens = ai_config.get("max_tokens", 2000)
         self.temperature = ai_config.get("temperature", 0.7)
 
         if not api_key:
-            logger.warning("ZHIPU_API_KEY not set, AI features will return mock responses")
+            logger.warning("ARK_API_KEY not set, AI features will return mock responses")
             self.client = None
         else:
             logger.info(f"Using API key (last 8 chars): ...{api_key[-8:]}")
             self.client = OpenAI(api_key=api_key, base_url=base_url)
-            logger.info("Zhipu AI client initialized")
+            logger.info("Ark AI client initialized")
 
         self._conversation_history: Dict[str, List[dict]] = {}
 
     def _call_api(self, messages: List[dict], max_tokens: Optional[int] = None) -> str:
         if self.client is None:
-            return "AI API Key未配置，请在.env文件中设置ZHIPU_API_KEY"
+            return "AI API Key未配置，请在.env文件中设置ARK_API_KEY"
 
         try:
             response = self.client.chat.completions.create(
@@ -48,7 +48,7 @@ class AIClient:
             if "Insufficient Balance" in error_msg or "402" in error_msg:
                 return "AI服务暂时不可用（账户余额不足），请检查API账户状态后重试。"
             elif "401" in error_msg or "Unauthorized" in error_msg:
-                return "AI API Key无效或已过期，请检查.env文件中的ZHIPU_API_KEY配置。"
+                return "AI API Key无效或已过期，请检查.env文件中的ARK_API_KEY配置。"
             elif "429" in error_msg or "rate limit" in error_msg.lower():
                 return "AI服务请求过于频繁，请稍后再试。"
             else:
