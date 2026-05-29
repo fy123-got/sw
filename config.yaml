@@ -1,6 +1,6 @@
 # 生物医药数据智能分析平台 - 配置文件
 
-# AI配置
+# AI配置（智谱GLM）
 ai:
   base_url: "https://open.bigmodel.cn/api/paas/v4"
   model: "glm-4-flash"
